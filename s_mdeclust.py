@@ -89,7 +89,7 @@ class S_MDEClust:
         if self.__assignment == 'exact':
             n = D.shape[0]
             k = centers.shape[0]
-            distances = cdist(D, centers)
+            distances = cdist(D, centers, metric='sqeuclidean')
             assignments = {(i, j): distances[i, j] for i in range(n) for j in range(k)}
 
             m = Model()

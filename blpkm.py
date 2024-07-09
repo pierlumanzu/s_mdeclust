@@ -18,7 +18,7 @@ class BLPKM:
 
         n = D.shape[0]
         k = centers.shape[0]
-        distances = cdist(D, centers)
+        distances = cdist(D, centers, metric='sqeuclidean')
         assignments = {(i, j): distances[i, j] for i in range(n) for j in range(k)}
 
         m = gb.Model()
@@ -46,7 +46,7 @@ class BLPKM:
     
     @staticmethod
     def get_total_distance(D, centers, labels):
-        dist = np.sqrt(((D - centers[labels, :]) ** 2).sum(axis=1)).sum()
+        dist = np.sum(np.linalg.norm(D - centers[labels], axis=1) ** 2)
         return dist
     
     def run(self, D, centers, K, ML, CL):
