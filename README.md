@@ -49,7 +49,7 @@ In order to run some parts of the code, the [Gurobi](https://www.gurobi.com/) Op
 
 In ```args_utils.py``` you can find all the possible arguments. Given a terminal (Anaconda Prompt for Windows users), an example of execution could be the following.
 
-``` python main.py --dataset Data/synthetic_n500_d2_k20_data.csv --constraints Data/constraint_sets/synthetic_n500_d2_k20_constraints_5000.json --seed 16007 --mutation ```
+``` python main.py --dataset Data/synthetic_n500_d2_k20_data.csv --constraints Data/constraint_sets/synthetic_n500_d2_k20_constraints_1000.json --seed 16007 --mutation --P 5 --max_iter 3 --max_iter_ls 25 --verbose ```
 
 The execution results are saved in the ```Results``` folder. In ```main.py```, you can find all the documentation about how the outputs are stored.
 

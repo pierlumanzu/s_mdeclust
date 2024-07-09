@@ -16,6 +16,8 @@ def get_args():
 
     parser.add_argument('--seed', type=int, help='seed for the pseudo-random number generator (provide it in order to have reproducible results)', default=None)
 
+    parser.add_argument('--verbose', help='Activate verbose', action='store_true', default=False)
+
     ####################################################
     ### S-MDEClust Parameters ###
     ####################################################
@@ -32,7 +34,7 @@ def get_args():
 
     parser.add_argument('--tol_pop', type=float, help='population tolerance', default=1e-4)
 
-    parser.add_argument('--Nmax_ls', type=int, help='maximum number of consecutive iterations without improvement of the best solution for the local search', default=2)
+    parser.add_argument('--Nmax_ls', type=int, help='maximum number of consecutive iterations without improvement of the best solution for the local search', default=1)
 
     parser.add_argument('--max_iter_ls', type=int, help='maximum number of iterations for the local search', default=np.inf)
 

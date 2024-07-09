@@ -38,12 +38,13 @@ s_mde = S_MDEClust(
     args.P, args.Nmax, args.max_iter, args.tol_pop,
     args.Nmax_ls, args.max_iter_ls,
     args.tol_sol,
-    args.F, args.alpha
+    args.F, args.alpha,
+    args.verbose
 )
-labels, centers, score, n_iter, n_iter_ls, elapsed_time, is_pop_collapsed = s_mde.run(D, K, ML, CL, args.seed, ML_groups, CL_groups)
+labels, centers, score, n_iter, n_ls, n_iter_ls, elapsed_time, is_pop_collapsed = s_mde.run(D, K, ML, CL, args.seed, ML_groups, CL_groups)
 
 pkl.dump({
     'labels': labels, 'centers': centers, 'score': score,
-    'n_iter': n_iter, 'n_iter_ls': n_iter_ls, 'elapsed_time': elapsed_time,
+    'n_iter': n_iter, 'n_ls': n_ls, 'n_iter_ls': n_iter_ls, 'elapsed_time': elapsed_time,
     'is_pop_collapsed': is_pop_collapsed
 }, open(os.path.join(res_path, '{}.pkl'.format(args.constraints.split('/')[-1].split('.')[0])), 'wb'))

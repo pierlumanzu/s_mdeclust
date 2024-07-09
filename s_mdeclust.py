@@ -14,7 +14,8 @@ class S_MDEClust:
                  P, Nmax, max_iter, tol_pop, 
                  Nmax_ls, max_iter_ls, 
                  tol_sol,
-                 F, alpha):
+                 F, alpha,
+                 verbose):
         
         self.__assignment = assignment
         self.__mutation = mutation
@@ -25,15 +26,16 @@ class S_MDEClust:
         self.__tol_sol = tol_sol
         self.__F = F
         self.__alpha = alpha
+        self.__verbose = verbose
 
         self.__ls = BLPKM(Nmax_ls, max_iter_ls)
 
-    def initialize_population(self, D, K, ML, CL):
+    def initialize_population(self, D, K, ML, CL, start_time):
         N, d = D.shape
 
         phi = np.empty((self.__P, N), dtype=int)
         psi = np.empty((self.__P, K, d), dtype=float)
-        scores = np.empty(self.__P, dtype=float)
+        scores = np.inf * np.ones(self.__P, dtype=float)
         n_iter_ls = 0
 
         for n_p in range(self.__P):
@@ -43,6 +45,9 @@ class S_MDEClust:
             phi[n_p, :], psi[n_p, :, :], scores[n_p], n_iter = self.__ls.run(D, centers, K, ML, CL)
 
             n_iter_ls += n_iter
+
+            if self.__verbose:
+                print('||' + str(-1).rjust(20) + ' |' + str(n_p+1).rjust(20) + ' |' + str(round(np.min(scores), 3)).rjust(20) + ' |' + 'N/A'.rjust(20) + ' |' + 'N/A'.rjust(20) + ' |' + str(n_p+1).rjust(20) + ' |' + str(n_iter_ls).rjust(20) + ' |' + str(round(time.time() - start_time, 3)).rjust(20) + ' ||')
 
         return phi, psi, scores, np.argmin(scores), n_iter_ls
     
@@ -149,13 +154,19 @@ class S_MDEClust:
     def run(self, D, K, ML, CL, seed, ML_groups, CL_groups):
 
         start_time = time.time()
+
+        if self.__verbose:
+            print('||' + 'N°iter'.rjust(20) + ' |' + 'Sol'.rjust(20) + ' |' + 'f*'.rjust(20) + ' |' + 'N°w/oImprBest'.rjust(20) + ' |' + 'Pop_tol'.rjust(20) + ' |' + 'N°ls'.rjust(20) + ' |' + 'N°iter_ls'.rjust(20) + ' |' + 'time'.rjust(20) + ' ||')
     
         np.random.seed(seed)
         
-        phi, psi, scores, best_s_idx, n_iter_ls = self.initialize_population(D, K, ML, CL)
+        phi, psi, scores, best_s_idx, n_iter_ls = self.initialize_population(D, K, ML, CL, start_time)
 
         n_iter = 0
         n_cons_it_wo_impr = 0
+
+        if self.__verbose:
+            print('||' + str(n_iter).rjust(20) + ' |' + str(0).rjust(20) + ' |' + str(round(scores[best_s_idx], 3)).rjust(20) + ' |' + str(n_cons_it_wo_impr).rjust(20) + ' |' + str(round(self.population_diversity(scores), 3)).rjust(20) + ' |' + str(len(scores)).rjust(20) + ' |' + str(n_iter_ls).rjust(20) + ' |' + str(round(time.time() - start_time, 3)).rjust(20) + ' ||')
 
         while n_cons_it_wo_impr < self.__Nmax and n_iter < self.__max_iter:
 
@@ -173,8 +184,8 @@ class S_MDEClust:
                 if self.__mutation and np.random.rand() < 1/(n_iter + 1):
                     psiO = self.mutation(D, psiO, ML, CL, ML_groups, CL_groups)
 
-                phiO, psiO, scoreO, n_iter_ls = self.__ls.run(D, psiO, K, ML, CL)
-                n_iter_ls += n_iter_ls
+                phiO, psiO, scoreO, add_n_iter_ls = self.__ls.run(D, psiO, K, ML, CL)
+                n_iter_ls += add_n_iter_ls
 
                 if scores[s] - scoreO >= self.__tol_sol:
                     
@@ -191,6 +202,9 @@ class S_MDEClust:
                 else:
                     n_cons_it_wo_impr += 1
 
+                if self.__verbose:
+                    print('||' + str(n_iter).rjust(20) + ' |' + str(s+1).rjust(20) + ' |' + str(round(scores[best_s_idx], 3)).rjust(20) + ' |' + str(n_cons_it_wo_impr).rjust(20) + ' |' + str(round(self.population_diversity(scores), 3)).rjust(20) + ' |' + str(n_iter * len(scores) + len(scores) + s + 1).rjust(20) + ' |' + str(n_iter_ls).rjust(20) + ' |' + str(round(time.time() - start_time, 3)).rjust(20) + ' ||')
+
             n_iter += 1
             
-        return phi[best_s_idx], psi[best_s_idx], scores[best_s_idx], n_iter, n_iter_ls, time.time() - start_time, self.population_diversity(scores) < self.__tol_pop
+        return phi[best_s_idx], psi[best_s_idx], scores[best_s_idx], n_iter, n_iter * len(scores) + len(scores), n_iter_ls, time.time() - start_time, self.population_diversity(scores) < self.__tol_pop
