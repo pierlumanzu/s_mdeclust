@@ -45,6 +45,9 @@ In order to execute the code, you need an [Anaconda](https://www.anaconda.com/) 
 
 In order to run some parts of the code, the [Gurobi](https://www.gurobi.com/) Optimizer needs to be installed and, in addition, a valid Gurobi licence is required.
 
+### Big Datasets
+As for the big datasets the user can test, i.e., Banana, Shuttle, Letter and Mnist, the files containing them can be downloaded executing the code in this [GitHub](https://github.com/phil85/PCCC-Data) folder.
+
 ### Usage
 
 In ```args_utils.py``` you can find all the possible arguments. Given a terminal (Anaconda Prompt for Windows users), an example of execution could be the following.
