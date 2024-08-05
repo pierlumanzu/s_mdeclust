@@ -69,22 +69,69 @@ class S_MDEClust:
         new_psi1[col_indices] = psi1[row_indices]
 
         return new_psi1
+    
+    def assign_objects(self, D, centers, ML, CL, ML_groups, CL_groups):
 
-    def crossover(self, psi1, psi2, psi3):
+        if self.__assignment == 'exact':
+
+            n = D.shape[0]
+            k = centers.shape[0]
+            distances = cdist(D, centers, metric='sqeuclidean')
+            assignments = {(i, j): distances[i, j] for i in range(n) for j in range(k)}
+
+            m = Model()
+
+            m.setParam("OutputFlag", False)
+
+            y = m.addVars(assignments, obj=assignments, vtype=GRB.BINARY)
+
+            m.addConstrs(y.sum(i, '*') == 1 for i in range(n))
+            m.addConstrs(y.sum('*', j) >= 1 for j in range(k))
+            m.addConstrs(y[i, j] == y[i_, j] for j in range(k) for i, i_ in ML)
+            m.addConstrs(y[i, j] + y[i_, j] <= 1 for j in range(k) for i, i_ in CL)
+
+            m.optimize()
+
+            labels = np.array([j for i, j in y.keys() if y[i, j].X > 0.5])
+
+            return labels
+        
+        else:
+            labels = -1 * np.ones(len(D), dtype=int)
+            groups_to_centers = []
+            
+            for k in range(len(centers)):
+                groups_to_centers.append([])
+            
+            for idx_ml_gr, ml_gr in enumerate(ML_groups):
+                possible_ks = np.array([k for k in range(len(centers)) if len(set(groups_to_centers[k]) & CL_groups[idx_ml_gr]) == 0])
+                if len(possible_ks) == 0:
+                    possible_ks = np.arange(len(centers))
+                
+                ml_gr_k = np.argmin(np.array([np.sum(np.linalg.norm(D[np.array(list(ml_gr))] - centers[pk], axis=1)**2) for pk in possible_ks]))
+                
+                groups_to_centers[possible_ks[ml_gr_k]].append(idx_ml_gr)
+                labels[np.array(list(ml_gr))] = possible_ks[ml_gr_k]
+                
+            return labels
+
+    def crossover(self, D, psi1, psi2, psi3, ML, CL, ML_groups, CL_groups):
         
         if self.__F == 'random':
-            return psi1 + (1e-7 + np.random.rand() * (2-2e-7)) * (psi2 - psi3)
+            psiO = psi1 + (1e-7 + np.random.rand() * (2-2e-7)) * (psi2 - psi3)
         
         elif self.__F == 'mdeclust':
-            return psi1 + (0.5 + np.random.rand() * 0.3) * (psi2 - psi3)
+            psiO = psi1 + (0.5 + np.random.rand() * 0.3) * (psi2 - psi3)
         
         elif type(self.__F) == float or type(self.__F) == int:
-            return psi1 + self.__F * (psi2 - psi3) 
+            psiO = psi1 + self.__F * (psi2 - psi3) 
         
         else:
             raise AssertionError
+        
+        return self.assign_objects(D, psiO, ML, CL, ML_groups, CL_groups), psiO
 
-    def assign_objects_excluding_c(self, D, centers, ML, CL, idx_c, ML_groups, CL_groups):
+    def assign_objects_excluding_c(self, D, labels, centers, ML, CL, idx_c, ML_groups, CL_groups):
         
         if self.__assignment == 'exact':
             n = D.shape[0]
@@ -112,22 +159,33 @@ class S_MDEClust:
                 return np.empty(0), False
             
         else:
-            labels = -1 * np.ones(len(D), dtype=int)
             groups_to_centers = []
+            groups_to_modify = []
             
             for k in range(len(centers)):
                 groups_to_centers.append([])
-            
-            for idx_ml_gr, ml_gr in enumerate(ML_groups):
-                possible_ks = np.array([k for k in range(len(centers)) if len(set(groups_to_centers[k]) & CL_groups[idx_ml_gr]) == 0])
+
+                assigned_points = np.where(labels == k)[0]
+
+                for idx_ml_gr, ml_gr in enumerate(ML_groups):
+                    if len(ml_gr & set(assigned_points)) != 0:
+                        if k != idx_c:
+                            groups_to_centers[-1].append(idx_ml_gr)
+                        else:
+                            groups_to_modify.append(idx_ml_gr)
+
+            for idx_ml_gr in groups_to_modify:
+                possible_ks = np.array([k for k in range(len(centers)) if (k != idx_c) and (len(set(groups_to_centers[k]) & CL_groups[idx_ml_gr]) == 0)])
+                if len(possible_ks) == 0:
+                    possible_ks = np.array([k for k in range(len(centers)) if k != idx_c])
                 
-                if len(possible_ks) != 0:
-                    ml_gr_k = np.argmin(np.array([np.sum(np.linalg.norm(D[np.array(list(ml_gr))] - centers[pk], axis=1)**2) for pk in possible_ks]))
+                if len(possible_ks) > 1:
+                    ml_gr_k = np.argmin(np.array([np.sum(np.linalg.norm(D[np.array(list(ML_groups[idx_ml_gr]))] - centers[pk], axis=1)**2) for pk in possible_ks]))
                 else:
-                    ml_gr_k = np.argmin(np.array([np.sum(np.linalg.norm(D[np.array(list(ml_gr))] - centers[pk], axis=1)**2) for pk in range(len(centers))]))
-                
-                groups_to_centers[ml_gr_k].append(idx_ml_gr)
-                labels[np.array(list(ml_gr))] = ml_gr_k
+                    ml_gr_k = 0
+
+                groups_to_centers[possible_ks[ml_gr_k]].append(idx_ml_gr)
+                labels[np.array(list(ML_groups[idx_ml_gr]))] = possible_ks[ml_gr_k]
                 
             return labels, True
 
@@ -139,10 +197,10 @@ class S_MDEClust:
         else:
             return (1 / len(D)) * np.ones(len(D))
     
-    def mutation(self, D, psiO, ML, CL, ML_groups, CL_groups):
+    def mutation(self, D, phiO, psiO, ML, CL, ML_groups, CL_groups):
         idx_removed_c = np.random.randint(len(psiO))
         
-        tmp_phi, success = self.assign_objects_excluding_c(D, psiO, ML, CL, idx_removed_c, ML_groups, CL_groups)
+        tmp_phi, success = self.assign_objects_excluding_c(D, phiO, psiO, ML, CL, idx_removed_c, ML_groups, CL_groups)
         
         probs = self.calculate_probs(D, tmp_phi, psiO, self.__alpha if success else 0)
         idx_new_center = np.random.choice(np.arange(len(D)), p=probs)
@@ -179,10 +237,10 @@ class S_MDEClust:
 
                 psi1 = self.exact_matching(psi[s1], psi[s3])
                 psi2 = self.exact_matching(psi[s2], psi[s3])
-                psiO = self.crossover(psi1, psi2, psi[s3])
+                phiO, psiO = self.crossover(D, psi1, psi2, psi[s3], ML, CL, ML_groups, CL_groups)
 
                 if self.__mutation and np.random.rand() < 1/(n_iter + 1):
-                    psiO = self.mutation(D, psiO, ML, CL, ML_groups, CL_groups)
+                    psiO = self.mutation(D, phiO, psiO, ML, CL, ML_groups, CL_groups)
 
                 phiO, psiO, scoreO, add_n_iter_ls = self.__ls.run(D, psiO, K, ML, CL)
                 n_iter_ls += add_n_iter_ls
