@@ -9,22 +9,27 @@
 
 Implementation of the Memetic Differential Evolution methods proposed in 
 
-[Mansueto, P. & Schoen F., Memetic Differential Evolution Methods for Semi-supervised Clustering. arXiv pre-print (2024)](
-https://arxiv.org/abs/2403.04322)
+[Mansueto, P. & Schoen F., Efficiently Solving Semi-supervised Clustering Problems Through Differential Evolution and Local Optimization. Journal of Classification (2025)](
+https://doi.org/10.1007/s00357-025-09528-z)
 
 If you have used our code for research purposes, please cite the publication mentioned above.
 For the sake of simplicity, we provide the Bibtex format:
 
 ```
-@misc{mansueto2024memeticdifferentialevolutionmethods,
-      title={Memetic Differential Evolution Methods for Semi-Supervised Clustering}, 
-      author={Pierluigi Mansueto and Fabio Schoen},
-      year={2024},
-      eprint={2403.04322},
-      archivePrefix={arXiv},
-      primaryClass={math.OC},
-      url={https://arxiv.org/abs/2403.04322}, 
+﻿@Article{Mansueto2025,
+author={Mansueto, Pierluigi
+and Schoen, Fabio},
+title={Efficiently Solving Semi-supervised Clustering Problems Through Differential Evolution and Local Optimization},
+journal={Journal of Classification},
+year={2025},
+month={Nov},
+day={28},
+issn={1432-1343},
+doi={10.1007/s00357-025-09528-z},
+url={https://doi.org/10.1007/s00357-025-09528-z}
 }
+
+
 ```
 
 ### Main Dependencies Installation
@@ -60,7 +65,7 @@ The execution results are saved in the ```Results``` folder. In ```main.py```, y
 
 If you have any question, feel free to contact me:
 
-[Pierluigi Mansueto](https://webgol.dinfo.unifi.it/pierluigi-mansueto/)<br>
+[Pierluigi Mansueto](https://webgol.dinfo.unifi.it/pages/pierluigi_mansueto/)<br>
 Global Optimization Laboratory ([GOL](https://webgol.dinfo.unifi.it/))<br>
 University of Florence<br>
 Email: pierluigi dot mansueto at unifi dot it
